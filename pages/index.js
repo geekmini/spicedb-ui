@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
-        totalNamespaces: 0,
+        totalDefinitions: 0,
         totalRelationships: 0,
         totalSubjects: 0,
         lastUpdate: null,
@@ -22,7 +22,7 @@ const Dashboard = () => {
             if (response.ok) {
                 const data = await response.json();
                 setStats({
-                    totalNamespaces: data.totalNamespaces,
+                    totalDefinitions: data.totalDefinitions,
                     totalRelationships: data.totalRelationships,
                     totalSubjects: data.totalSubjects,
                     lastUpdate: new Date(data.lastUpdate).toLocaleString(),
@@ -161,8 +161,8 @@ const Dashboard = () => {
                                 </div>
                                 <div className="ml-5 w-0 flex-1">
                                     <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Namespaces</dt>
-                                        <dd className="text-lg font-medium text-gray-900">{stats.totalNamespaces}</dd>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">Definitions</dt>
+                                        <dd className="text-lg font-medium text-gray-900">{stats.totalDefinitions}</dd>
                                     </dl>
                                 </div>
                             </div>

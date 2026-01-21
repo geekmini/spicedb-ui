@@ -148,7 +148,6 @@ SPICEDB_TOKEN=your-token-here        # Pre-shared key for authentication
 ### 1. Schema Management
 - Navigate to **Schema** page
 - Edit your authorization model using SpiceDB schema language
-- Use the visual view to see parsed namespaces, relations, and permissions
 - Save changes directly to SpiceDB
 
 ### 2. Relationship Management

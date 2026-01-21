@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
     try {
         let stats = {
-            totalNamespaces: 0,
+            totalDefinitions: 0,
             totalRelationships: 0,
             totalSubjects: 0,
             uniqueResourceTypes: [],
@@ -26,9 +26,9 @@ export default async function handler(req, res) {
             if (schemaResponse.ok) {
                 stats.isConnected = true;
                 const schemaData = await schemaResponse.json();
-                const namespaces = extractNamespacesFromSchema(schemaData.schemaText || '');
-                stats.totalNamespaces = namespaces.length;
-                stats.uniqueResourceTypes = namespaces;
+                const definitions = extractDefinitionsFromSchema(schemaData.schemaText || '');
+                stats.totalDefinitions = definitions.length;
+                stats.uniqueResourceTypes = definitions;
             }
         } catch (error) {
             console.error('Error fetching schema:', error);
@@ -46,15 +46,15 @@ export default async function handler(req, res) {
     }
 }
 
-// Helper function to extract namespaces from schema
-function extractNamespacesFromSchema(schemaText) {
+// Helper function to extract definitions from schema
+function extractDefinitionsFromSchema(schemaText) {
     const definitionRegex = /definition\s+(\w+)\s*{/g;
-    const namespaces = [];
+    const definitions = [];
     let match;
 
     while ((match = definitionRegex.exec(schemaText)) !== null) {
-        namespaces.push(match[1]);
+        definitions.push(match[1]);
     }
 
-    return namespaces;
+    return definitions;
 }
