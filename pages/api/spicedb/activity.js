@@ -50,19 +50,19 @@ export default async function handler(req, res) {
 
             // Get recent relationships info
             try {
-                const namespaces = await getNamespacesFromSchema();
+                const definitions = await getDefinitionsFromSchema();
                 let totalRelationships = 0;
                 let recentRelationships = [];
 
-                for (const namespace of namespaces.slice(0, 3)) { // Check first 3 namespaces
+                for (const definition of definitions.slice(0, 3)) { // Check first 3 definitions
                     try {
-                        const relationships = await getRelationshipsForType(namespace);
+                        const relationships = await getRelationshipsForType(definition);
                         totalRelationships += relationships.length;
 
                         // Add recent relationships to activity
                         relationships.slice(0, 2).forEach((rel, index) => {
                             recentRelationships.push({
-                                id: `rel_${namespace}_${index}`,
+                                id: `rel_${definition}_${index}`,
                                 action: 'Relationship Active',
                                 resource: `${rel.resource.type}:${rel.resource.id}#${rel.relation}@${rel.subject.type}:${rel.subject.id}`,
                                 timestamp: getRelativeTime(index * 5), // Simulate different times
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
                             });
                         });
                     } catch (error) {
-                        // Continue with other namespaces
+                        // Continue with other definitions
                     }
                 }
 
@@ -164,7 +164,7 @@ export default async function handler(req, res) {
 }
 
 // Helper functions
-async function getNamespacesFromSchema() {
+async function getDefinitionsFromSchema() {
     const response = await spicedbFetch('/v1/schema/read', {
         method: 'POST',
         body: JSON.stringify({})
@@ -178,14 +178,14 @@ async function getNamespacesFromSchema() {
     const schemaText = data.schema_text || '';
 
     const definitionRegex = /definition\s+(\w+)\s*{/g;
-    const namespaces = [];
+    const definitions = [];
     let match;
 
     while ((match = definitionRegex.exec(schemaText)) !== null) {
-        namespaces.push(match[1]);
+        definitions.push(match[1]);
     }
 
-    return namespaces;
+    return definitions;
 }
 
 async function getRelationshipsForType(resourceType) {

@@ -23,7 +23,7 @@ export default async function handler(req, res) {
         const schemaText = schemaData.schemaText || '';
 
         // Extract resource types and their relations/permissions
-        const resourceTypes = parseNamespaces(schemaText);
+        const resourceTypes = parseDefinitions(schemaText);
 
         res.status(200).json({
             resourceTypes
@@ -38,13 +38,13 @@ export default async function handler(req, res) {
     }
 }
 
-const parseNamespaces = (schema) => {
-    // Parse namespaces from current schema
-    const namespaceRegex = /definition\s+(\w+)\s*\{/g;
+const parseDefinitions = (schema) => {
+    // Parse definitions from current schema
+    const definitionRegex = /definition\s+(\w+)\s*\{/g;
     const found = [];
     let match;
 
-    while ((match = namespaceRegex.exec(schema)) !== null) {
+    while ((match = definitionRegex.exec(schema)) !== null) {
         found.push({
             name: match[1],
             relations: extractRelations(match[1], schema),
@@ -55,14 +55,13 @@ const parseNamespaces = (schema) => {
     return found;
 };
 
-const extractRelations = (namespace, schemaText) => {
-    const namespaceBlock = extractNamespaceBlock(namespace, schemaText);
-    // Fixed regex: use [\s\S] to match any character including newlines, and make it non-greedy
+const extractRelations = (definitionName, schemaText) => {
+    const definitionBlock = extractDefinitionBlock(definitionName, schemaText);
     const relationRegex = /relation\s+(\w+):\s*([^\n\r]+)/g;
     const relations = [];
     let match;
 
-    while ((match = relationRegex.exec(namespaceBlock)) !== null) {
+    while ((match = relationRegex.exec(definitionBlock)) !== null) {
         relations.push({
             name: match[1],
             type: match[2].trim()
@@ -71,14 +70,13 @@ const extractRelations = (namespace, schemaText) => {
     return relations;
 };
 
-const extractPermissions = (namespace, schemaText) => {
-    const namespaceBlock = extractNamespaceBlock(namespace, schemaText);
-    // Fixed regex: capture until newline or end of block
+const extractPermissions = (definitionName, schemaText) => {
+    const definitionBlock = extractDefinitionBlock(definitionName, schemaText);
     const permissionRegex = /permission\s+(\w+)\s*=\s*([^\n\r]+)/g;
     const permissions = [];
     let match;
 
-    while ((match = permissionRegex.exec(namespaceBlock)) !== null) {
+    while ((match = permissionRegex.exec(definitionBlock)) !== null) {
         permissions.push({
             name: match[1],
             expression: match[2].trim()
@@ -87,8 +85,8 @@ const extractPermissions = (namespace, schemaText) => {
     return permissions;
 };
 
-const extractNamespaceBlock = (namespace, schemaText) => {
-    const startRegex = new RegExp(`definition\\s+${namespace}\\s*\\{`);
+const extractDefinitionBlock = (definitionName, schemaText) => {
+    const startRegex = new RegExp(`definition\\s+${definitionName}\\s*\\{`);
     const startMatch = schemaText.match(startRegex);
     if (!startMatch) return '';
 

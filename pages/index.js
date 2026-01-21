@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
-        totalNamespaces: 0,
+        totalDefinitions: 0,
         totalRelationships: 0,
         totalSubjects: 0,
         lastUpdate: null,
@@ -11,7 +11,8 @@ const Dashboard = () => {
     });
 
     const [recentActivity, setRecentActivity] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState('');
 
     // Load real stats from SpiceDB
@@ -21,7 +22,7 @@ const Dashboard = () => {
             if (response.ok) {
                 const data = await response.json();
                 setStats({
-                    totalNamespaces: data.totalNamespaces,
+                    totalDefinitions: data.totalDefinitions,
                     totalRelationships: data.totalRelationships,
                     totalSubjects: data.totalSubjects,
                     lastUpdate: new Date(data.lastUpdate).toLocaleString(),
@@ -65,30 +66,39 @@ const Dashboard = () => {
 
     useEffect(() => {
         const loadDashboardData = async () => {
-            setIsLoading(true);
             await Promise.all([
                 loadStats(),
                 loadActivity(),
                 testConnection()
             ]);
-            setIsLoading(false);
+            setIsInitialLoad(false);
+        };
+
+        const refreshDashboardData = async () => {
+            setIsRefreshing(true);
+            await Promise.all([
+                loadStats(),
+                loadActivity(),
+                testConnection()
+            ]);
+            setIsRefreshing(false);
         };
 
         loadDashboardData();
 
-        // Refresh data every 30 seconds
-        const interval = setInterval(loadDashboardData, 30000);
+        // Refresh data every 30 seconds (silently, no loading indicator)
+        const interval = setInterval(refreshDashboardData, 30000);
         return () => clearInterval(interval);
     }, []);
 
     const refreshData = async () => {
-        setIsLoading(true);
+        setIsRefreshing(true);
         await Promise.all([
             loadStats(),
             loadActivity(),
             testConnection()
         ]);
-        setIsLoading(false);
+        setIsRefreshing(false);
     };
 
     const getActivityIcon = (type) => {
@@ -118,8 +128,8 @@ const Dashboard = () => {
                     </div>
                 )}
 
-                {/* Connection Status Alert */}
-                {!stats.isConnected && (
+                {/* Connection Status Alert - only show after initial load completes */}
+                {!isInitialLoad && !stats.isConnected && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                         <div className="flex items-center">
                             <span className="text-yellow-600 mr-2">⚠️</span>
@@ -131,8 +141,8 @@ const Dashboard = () => {
                     </div>
                 )}
 
-                {/* Loading State */}
-                {isLoading && (
+                {/* Loading State - only show during initial load */}
+                {isInitialLoad && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <div className="flex items-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
@@ -151,8 +161,8 @@ const Dashboard = () => {
                                 </div>
                                 <div className="ml-5 w-0 flex-1">
                                     <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Namespaces</dt>
-                                        <dd className="text-lg font-medium text-gray-900">{stats.totalNamespaces}</dd>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">Definitions</dt>
+                                        <dd className="text-lg font-medium text-gray-900">{stats.totalDefinitions}</dd>
                                     </dl>
                                 </div>
                             </div>
@@ -206,11 +216,11 @@ const Dashboard = () => {
                             </a>
                             <button
                                 onClick={refreshData}
-                                disabled={isLoading}
+                                disabled={isRefreshing}
                                 className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                             >
                                 <span className="mr-2">🔄</span>
-                                {isLoading ? 'Refreshing...' : 'Refresh Data'}
+                                {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
                             </button>
                         </div>
                     </div>

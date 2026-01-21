@@ -8,7 +8,7 @@ const Relationships = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterNamespace, setFilterNamespace] = useState('all');
+    const [filterDefinition, setFilterDefinition] = useState('all');
     const [newRelationship, setNewRelationship] = useState({
         resource: '',
         relation: '',
@@ -24,7 +24,7 @@ const Relationships = () => {
 
     useEffect(() => {
         filterRelationships();
-    }, [relationships, searchTerm, filterNamespace]);
+    }, [relationships, searchTerm, filterDefinition]);
 
     const loadResources = async () => {
         setIsLoading(true);
@@ -79,8 +79,8 @@ const Relationships = () => {
             );
         }
 
-        if (filterNamespace !== 'all') {
-            filtered = filtered.filter(rel => rel.resource.type === filterNamespace);
+        if (filterDefinition !== 'all') {
+            filtered = filtered.filter(rel => rel.resource.type === filterDefinition);
         }
 
         setFilteredRelationships(filtered);
@@ -147,7 +147,7 @@ const Relationships = () => {
         setIsLoading(true);
         try {
             // This would be your actual SpiceDB API call
-            await fetch(`/api/spicedb/relationships`, {
+            const response = await fetch(`/api/spicedb/relationships`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -157,8 +157,17 @@ const Relationships = () => {
                     "subjectId": rel.subject.id,
                 })
             });
+
+            if (response.ok) {
+                setSuccess('Relationship deleted successfully');
+                loadRelationships(); // Reload the relationships
+            } else {
+                const errorData = await response.json();
+                setError(`Failed to delete relationship: ${errorData.message}`);
+            }
         } catch (err) {
             setError('Failed to delete relationship');
+        } finally {
             setIsLoading(false);
         }
     };
@@ -220,8 +229,8 @@ const Relationships = () => {
                         </div>
                         <div>
                             <select
-                                value={filterNamespace}
-                                onChange={(e) => setFilterNamespace(e.target.value)}
+                                value={filterDefinition}
+                                onChange={(e) => setFilterDefinition(e.target.value)}
                                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="all">All Resources</option>
@@ -319,7 +328,7 @@ const Relationships = () => {
                                 <div className="text-gray-400 text-lg mb-2">🔗</div>
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">No relationships found</h3>
                                 <p className="text-gray-500">
-                                    {searchTerm || filterNamespace !== 'all'
+                                    {searchTerm || filterDefinition !== 'all'
                                         ? 'Try adjusting your search filters'
                                         : 'Add your first relationship to get started'}
                                 </p>
