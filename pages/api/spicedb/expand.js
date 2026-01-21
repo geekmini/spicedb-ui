@@ -1,3 +1,5 @@
+import { spicedbFetch } from '../../../lib/spicedb';
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
@@ -13,22 +15,14 @@ export default async function handler(req, res) {
             });
         }
 
-        // SpiceDB API endpoint - adjust URL as needed
-        const spicedbUrl = process.env.SPICEDB_URL || 'http://localhost:8080';
-        const token = process.env.SPICEDB_TOKEN || 'somerandomkeyhere';
-
         const requestBody = {
             resource,
             permission,
             ...(context && { context })
         };
 
-        const response = await fetch(`${spicedbUrl}/v1/permissions/expand`, {
+        const response = await spicedbFetch('/v1/permissions/expand', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
             body: JSON.stringify(requestBody)
         });
 

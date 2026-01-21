@@ -1,19 +1,14 @@
+import { spicedbFetch } from '../../../lib/spicedb';
+
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    const spicedbUrl = process.env.SPICEDB_URL || 'http://localhost:8080';
-    const token = process.env.SPICEDB_TOKEN || 'somerandomkeyhere';
-
     try {
         // Get schema to extract resource types and their relations
-        const schemaResponse = await fetch(`${spicedbUrl}/v1/schema/read`, {
+        const schemaResponse = await spicedbFetch('/v1/schema/read', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
             body: JSON.stringify({})
         });
 
@@ -29,8 +24,6 @@ export default async function handler(req, res) {
 
         // Extract resource types and their relations/permissions
         const resourceTypes = parseNamespaces(schemaText);
-
-
 
         res.status(200).json({
             resourceTypes
