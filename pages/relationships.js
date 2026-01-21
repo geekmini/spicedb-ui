@@ -147,7 +147,7 @@ const Relationships = () => {
         setIsLoading(true);
         try {
             // This would be your actual SpiceDB API call
-            await fetch(`/api/spicedb/relationships`, {
+            const response = await fetch(`/api/spicedb/relationships`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -157,8 +157,17 @@ const Relationships = () => {
                     "subjectId": rel.subject.id,
                 })
             });
+
+            if (response.ok) {
+                setSuccess('Relationship deleted successfully');
+                loadRelationships(); // Reload the relationships
+            } else {
+                const errorData = await response.json();
+                setError(`Failed to delete relationship: ${errorData.message}`);
+            }
         } catch (err) {
             setError('Failed to delete relationship');
+        } finally {
             setIsLoading(false);
         }
     };
