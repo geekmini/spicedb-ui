@@ -1,21 +1,18 @@
+import { spicedbFetch, getSpiceDBUrl } from '../../../lib/spicedb';
+
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    const spicedbUrl = process.env.SPICEDB_URL || 'http://localhost:8080';
-    const token = process.env.SPICEDB_TOKEN || 'somerandomkeyhere';
+    const spicedbUrl = getSpiceDBUrl();
 
     try {
         const startTime = Date.now();
 
-        // Test basic connectivity with schema read
-        const response = await fetch(`${spicedbUrl}/healthz`, {
+        // Test basic connectivity with health check
+        const response = await spicedbFetch('/healthz', {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            }
         });
 
         const endTime = Date.now();

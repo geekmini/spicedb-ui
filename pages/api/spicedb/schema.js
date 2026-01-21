@@ -1,15 +1,10 @@
-export default async function handler(req, res) {
-    const spicedbUrl = process.env.SPICEDB_URL || 'http://localhost:8080';
-    const token = process.env.SPICEDB_TOKEN || 'somerandomkeyhere';
+import { spicedbFetch } from '../../../lib/spicedb';
 
+export default async function handler(req, res) {
     if (req.method === 'GET') {
         try {
-            const response = await fetch(`${spicedbUrl}/v1/schema/read`, {
+            const response = await spicedbFetch('/v1/schema/read', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                }
             });
 
             if (!response.ok) {
@@ -46,12 +41,8 @@ export default async function handler(req, res) {
 
             console.log('Writing schema:', schemaText);
 
-            const response = await fetch(`${spicedbUrl}/v1/schema/write`, {
+            const response = await spicedbFetch('/v1/schema/write', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     schema: schemaText
                 })

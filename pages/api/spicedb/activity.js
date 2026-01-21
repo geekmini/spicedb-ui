@@ -1,3 +1,5 @@
+import { spicedbFetch, getSpiceDBUrl } from '../../../lib/spicedb';
+
 // This API simulates recent activity since SpiceDB doesn't provide activity logs
 // In a real implementation, you might want to maintain your own activity log
 export default async function handler(req, res) {
@@ -5,8 +7,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    const spicedbUrl = process.env.SPICEDB_URL || 'http://localhost:8080';
-    const token = process.env.SPICEDB_TOKEN || 'somerandomkeyhere';
+    const spicedbUrl = getSpiceDBUrl();
 
     try {
         const activities = [];
@@ -14,12 +15,8 @@ export default async function handler(req, res) {
         // Check if we can connect to SpiceDB
         let isConnected = false;
         try {
-            const healthResponse = await fetch(`${spicedbUrl}/v1/schema/read`, {
+            const healthResponse = await spicedbFetch('/v1/schema/read', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
                 body: JSON.stringify({})
             });
             isConnected = healthResponse.ok;
@@ -30,12 +27,8 @@ export default async function handler(req, res) {
         if (isConnected) {
             // Get recent schema info
             try {
-                const schemaResponse = await fetch(`${spicedbUrl}/v1/schema/read`, {
+                const schemaResponse = await spicedbFetch('/v1/schema/read', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
                     body: JSON.stringify({})
                 });
 
@@ -57,13 +50,13 @@ export default async function handler(req, res) {
 
             // Get recent relationships info
             try {
-                const namespaces = await getNamespacesFromSchema(spicedbUrl, token);
+                const namespaces = await getNamespacesFromSchema();
                 let totalRelationships = 0;
                 let recentRelationships = [];
 
                 for (const namespace of namespaces.slice(0, 3)) { // Check first 3 namespaces
                     try {
-                        const relationships = await getRelationshipsForType(spicedbUrl, token, namespace);
+                        const relationships = await getRelationshipsForType(namespace);
                         totalRelationships += relationships.length;
 
                         // Add recent relationships to activity
@@ -171,13 +164,9 @@ export default async function handler(req, res) {
 }
 
 // Helper functions
-async function getNamespacesFromSchema(spicedbUrl, token) {
-    const response = await fetch(`${spicedbUrl}/v1/schema/read`, {
+async function getNamespacesFromSchema() {
+    const response = await spicedbFetch('/v1/schema/read', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({})
     });
 
@@ -199,13 +188,9 @@ async function getNamespacesFromSchema(spicedbUrl, token) {
     return namespaces;
 }
 
-async function getRelationshipsForType(spicedbUrl, token, resourceType) {
-    const response = await fetch(`${spicedbUrl}/v1/relationships/read`, {
+async function getRelationshipsForType(resourceType) {
+    const response = await spicedbFetch('/v1/relationships/read', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({
             relationship_filter: {
                 resource_type: resourceType

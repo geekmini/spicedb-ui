@@ -1,7 +1,6 @@
-export default async function handler(req, res) {
-    const spicedbUrl = process.env.SPICEDB_URL || 'http://localhost:8080';
-    const token = process.env.SPICEDB_TOKEN || 'somerandomkeyhere';
+import { spicedbFetch } from '../../../lib/spicedb';
 
+export default async function handler(req, res) {
     if (req.method === 'GET') {
         try {
             // Get query parameters for filtering
@@ -11,18 +10,14 @@ export default async function handler(req, res) {
 
             if (resource_type) {
                 // If a specific resource type is requested, filter by it
-                const relationships = await fetchRelationshipsForType(spicedbUrl, token, resource_type, resource_id, relation, subject_type, subject_id);
+                const relationships = await fetchRelationshipsForType(resource_type, resource_id, relation, subject_type, subject_id);
                 allRelationships = relationships;
             } else {
                 // If no specific type, we need to get all relationships by querying each known type
                 // First, let's get the schema to know what types exist
                 try {
-                    const schemaResponse = await fetch(`${spicedbUrl}/v1/schema/read`, {
+                    const schemaResponse = await spicedbFetch('/v1/schema/read', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`,
-                        },
                         body: JSON.stringify({})
                     });
 
@@ -33,7 +28,7 @@ export default async function handler(req, res) {
                         // Fetch relationships for each resource type
                         for (const type of resourceTypes) {
                             try {
-                                const relationships = await fetchRelationshipsForType(spicedbUrl, token, type);
+                                const relationships = await fetchRelationshipsForType(type);
                                 allRelationships = allRelationships.concat(relationships);
                             } catch (error) {
                                 console.log(`No relationships found for type ${type}:`, error.message);
@@ -45,7 +40,7 @@ export default async function handler(req, res) {
                         const commonTypes = ['user', 'business', 'system', 'document', 'organization', 'folder'];
                         for (const type of commonTypes) {
                             try {
-                                const relationships = await fetchRelationshipsForType(spicedbUrl, token, type);
+                                const relationships = await fetchRelationshipsForType(type);
                                 allRelationships = allRelationships.concat(relationships);
                             } catch (error) {
                                 // Ignore errors for types that don't exist
@@ -79,12 +74,8 @@ export default async function handler(req, res) {
             if (body.resource && body.relation && body.subject) {
                 const { resource, relation, subject } = body;
 
-                const response = await fetch(`${spicedbUrl}/v1/relationships/write`, {
+                const response = await spicedbFetch('/v1/relationships/write', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
                     body: JSON.stringify({
                         updates: [{
                             operation: 'OPERATION_CREATE',
@@ -108,12 +99,8 @@ export default async function handler(req, res) {
             else if (body.resourceType && body.resourceId && body.subjectType && body.subjectId) {
                 const { resourceType, resourceId, subjectType, subjectId } = body;
 
-                const response = await fetch(`${spicedbUrl}/v1/relationships/delete`, {
+                const response = await spicedbFetch('/v1/relationships/delete', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
                     body: JSON.stringify({
                         "relationshipFilter": {
                             "resourceType": resourceType,
@@ -157,7 +144,7 @@ export default async function handler(req, res) {
 }
 
 // Helper function to fetch relationships for a specific resource type
-async function fetchRelationshipsForType(spicedbUrl, token, resourceType, resourceId = null, relation = null, subjectType = null, subjectId = null) {
+async function fetchRelationshipsForType(resourceType, resourceId = null, relation = null, subjectType = null, subjectId = null) {
     const relationshipFilter = {
         resourceType: resourceType
     };
@@ -179,12 +166,8 @@ async function fetchRelationshipsForType(spicedbUrl, token, resourceType, resour
         }
     }
 
-    const response = await fetch(`${spicedbUrl}/v1/relationships/read`, {
+    const response = await spicedbFetch('/v1/relationships/read', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({
             relationshipFilter: relationshipFilter
         })
